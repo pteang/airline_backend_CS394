@@ -1,0 +1,721 @@
+{
+    "_type": "export",
+    "__export_format": 4,
+    "__export_date": "2026-07-09T04:32:55+00:00",
+    "__export_source": "airline-backend:generated",
+    "resources": [
+        {
+            "_id": "wrk_airline",
+            "_type": "workspace",
+            "parentId": null,
+            "name": "Airline API",
+            "description": "Airline backend (Laravel). Set the token env var after running Auth > Login.",
+            "scope": "collection"
+        },
+        {
+            "_id": "env_base",
+            "_type": "environment",
+            "parentId": "wrk_airline",
+            "name": "Base Environment",
+            "data": {
+                "base_url": "http://127.0.0.1:8000/api",
+                "token": ""
+            },
+            "dataPropertyOrder": {
+                "&": [
+                    "base_url",
+                    "token"
+                ]
+            },
+            "metaSortKey": 1
+        },
+        {
+            "_id": "fld_auth",
+            "_type": "request_group",
+            "parentId": "wrk_airline",
+            "name": "Auth",
+            "metaSortKey": 1
+        },
+        {
+            "_id": "fld_flights",
+            "_type": "request_group",
+            "parentId": "wrk_airline",
+            "name": "Flights (public)",
+            "metaSortKey": 2
+        },
+        {
+            "_id": "fld_bookings",
+            "_type": "request_group",
+            "parentId": "wrk_airline",
+            "name": "Bookings (passenger)",
+            "metaSortKey": 3
+        },
+        {
+            "_id": "fld_admin",
+            "_type": "request_group",
+            "parentId": "wrk_airline",
+            "name": "Staff / Admin (internal)",
+            "metaSortKey": 4
+        },
+        {
+            "_id": "req_1",
+            "_type": "request",
+            "parentId": "fld_auth",
+            "name": "Register",
+            "method": "POST",
+            "url": "{{ _.base_url }}/auth/register",
+            "headers": [
+                {
+                    "name": "Accept",
+                    "value": "application/json"
+                },
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "authentication": {
+                "type": "none"
+            },
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n    \"name\": \"New Passenger\",\n    \"email\": \"new@example.test\",\n    \"password\": \"password\",\n    \"phone\": \"+1-555-0199\"\n}"
+            },
+            "parameters": [],
+            "metaSortKey": 1
+        },
+        {
+            "_id": "req_2",
+            "_type": "request",
+            "parentId": "fld_auth",
+            "name": "Login (passenger or staff)",
+            "method": "POST",
+            "url": "{{ _.base_url }}/auth/login",
+            "headers": [
+                {
+                    "name": "Accept",
+                    "value": "application/json"
+                },
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "authentication": {
+                "type": "none"
+            },
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n    \"email\": \"jane@example.test\",\n    \"password\": \"password\"\n}"
+            },
+            "parameters": [],
+            "metaSortKey": 2
+        },
+        {
+            "_id": "req_3",
+            "_type": "request",
+            "parentId": "fld_auth",
+            "name": "Me",
+            "method": "GET",
+            "url": "{{ _.base_url }}/auth/me",
+            "headers": [
+                {
+                    "name": "Accept",
+                    "value": "application/json"
+                }
+            ],
+            "authentication": {
+                "type": "bearer",
+                "token": "{{ _.token }}",
+                "prefix": ""
+            },
+            "body": [],
+            "parameters": [],
+            "metaSortKey": 3
+        },
+        {
+            "_id": "req_4",
+            "_type": "request",
+            "parentId": "fld_auth",
+            "name": "Change Password",
+            "method": "PUT",
+            "url": "{{ _.base_url }}/auth/change-password",
+            "headers": [
+                {
+                    "name": "Accept",
+                    "value": "application/json"
+                },
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "authentication": {
+                "type": "bearer",
+                "token": "{{ _.token }}",
+                "prefix": ""
+            },
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n    \"current_password\": \"password\",\n    \"new_password\": \"newpass123\"\n}"
+            },
+            "parameters": [],
+            "metaSortKey": 4
+        },
+        {
+            "_id": "req_5",
+            "_type": "request",
+            "parentId": "fld_auth",
+            "name": "Logout",
+            "method": "POST",
+            "url": "{{ _.base_url }}/auth/logout",
+            "headers": [
+                {
+                    "name": "Accept",
+                    "value": "application/json"
+                }
+            ],
+            "authentication": {
+                "type": "bearer",
+                "token": "{{ _.token }}",
+                "prefix": ""
+            },
+            "body": [],
+            "parameters": [],
+            "metaSortKey": 5
+        },
+        {
+            "_id": "req_6",
+            "_type": "request",
+            "parentId": "fld_flights",
+            "name": "Search Flights",
+            "method": "GET",
+            "url": "{{ _.base_url }}/flights/search",
+            "headers": [
+                {
+                    "name": "Accept",
+                    "value": "application/json"
+                }
+            ],
+            "authentication": {
+                "type": "none"
+            },
+            "body": [],
+            "parameters": [
+                {
+                    "name": "origin",
+                    "value": "New York (JFK)"
+                },
+                {
+                    "name": "destination",
+                    "value": "Los Angeles (LAX)"
+                },
+                {
+                    "name": "class",
+                    "value": "business"
+                },
+                {
+                    "name": "date",
+                    "value": ""
+                }
+            ],
+            "metaSortKey": 6
+        },
+        {
+            "_id": "req_7",
+            "_type": "request",
+            "parentId": "fld_flights",
+            "name": "List Flights",
+            "method": "GET",
+            "url": "{{ _.base_url }}/flights",
+            "headers": [
+                {
+                    "name": "Accept",
+                    "value": "application/json"
+                }
+            ],
+            "authentication": {
+                "type": "none"
+            },
+            "body": [],
+            "parameters": [],
+            "metaSortKey": 7
+        },
+        {
+            "_id": "req_8",
+            "_type": "request",
+            "parentId": "fld_flights",
+            "name": "Get Flight",
+            "method": "GET",
+            "url": "{{ _.base_url }}/flights/1",
+            "headers": [
+                {
+                    "name": "Accept",
+                    "value": "application/json"
+                }
+            ],
+            "authentication": {
+                "type": "none"
+            },
+            "body": [],
+            "parameters": [],
+            "metaSortKey": 8
+        },
+        {
+            "_id": "req_9",
+            "_type": "request",
+            "parentId": "fld_flights",
+            "name": "Flight Seats",
+            "method": "GET",
+            "url": "{{ _.base_url }}/flights/1/seats",
+            "headers": [
+                {
+                    "name": "Accept",
+                    "value": "application/json"
+                }
+            ],
+            "authentication": {
+                "type": "none"
+            },
+            "body": [],
+            "parameters": [],
+            "metaSortKey": 9
+        },
+        {
+            "_id": "req_10",
+            "_type": "request",
+            "parentId": "fld_bookings",
+            "name": "My Bookings",
+            "method": "GET",
+            "url": "{{ _.base_url }}/bookings",
+            "headers": [
+                {
+                    "name": "Accept",
+                    "value": "application/json"
+                }
+            ],
+            "authentication": {
+                "type": "bearer",
+                "token": "{{ _.token }}",
+                "prefix": ""
+            },
+            "body": [],
+            "parameters": [],
+            "metaSortKey": 10
+        },
+        {
+            "_id": "req_11",
+            "_type": "request",
+            "parentId": "fld_bookings",
+            "name": "Create Booking",
+            "method": "POST",
+            "url": "{{ _.base_url }}/bookings",
+            "headers": [
+                {
+                    "name": "Accept",
+                    "value": "application/json"
+                },
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "authentication": {
+                "type": "bearer",
+                "token": "{{ _.token }}",
+                "prefix": ""
+            },
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n    \"flight_id\": 1,\n    \"passengers\": [\n        {\n            \"passenger_id\": 1,\n            \"seat_class\": \"business\",\n            \"flight_seat_id\": 5\n        }\n    ]\n}"
+            },
+            "parameters": [],
+            "metaSortKey": 11
+        },
+        {
+            "_id": "req_12",
+            "_type": "request",
+            "parentId": "fld_bookings",
+            "name": "Get Booking",
+            "method": "GET",
+            "url": "{{ _.base_url }}/bookings/1",
+            "headers": [
+                {
+                    "name": "Accept",
+                    "value": "application/json"
+                }
+            ],
+            "authentication": {
+                "type": "bearer",
+                "token": "{{ _.token }}",
+                "prefix": ""
+            },
+            "body": [],
+            "parameters": [],
+            "metaSortKey": 12
+        },
+        {
+            "_id": "req_13",
+            "_type": "request",
+            "parentId": "fld_bookings",
+            "name": "Pay Booking",
+            "method": "POST",
+            "url": "{{ _.base_url }}/bookings/1/payment",
+            "headers": [
+                {
+                    "name": "Accept",
+                    "value": "application/json"
+                },
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "authentication": {
+                "type": "bearer",
+                "token": "{{ _.token }}",
+                "prefix": ""
+            },
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n    \"payment_method\": \"credit_card\"\n}"
+            },
+            "parameters": [],
+            "metaSortKey": 13
+        },
+        {
+            "_id": "req_14",
+            "_type": "request",
+            "parentId": "fld_bookings",
+            "name": "Booking Ticket",
+            "method": "GET",
+            "url": "{{ _.base_url }}/bookings/1/ticket",
+            "headers": [
+                {
+                    "name": "Accept",
+                    "value": "application/json"
+                }
+            ],
+            "authentication": {
+                "type": "bearer",
+                "token": "{{ _.token }}",
+                "prefix": ""
+            },
+            "body": [],
+            "parameters": [],
+            "metaSortKey": 14
+        },
+        {
+            "_id": "req_15",
+            "_type": "request",
+            "parentId": "fld_bookings",
+            "name": "Cancel Booking",
+            "method": "POST",
+            "url": "{{ _.base_url }}/bookings/1/cancel",
+            "headers": [
+                {
+                    "name": "Accept",
+                    "value": "application/json"
+                }
+            ],
+            "authentication": {
+                "type": "bearer",
+                "token": "{{ _.token }}",
+                "prefix": ""
+            },
+            "body": [],
+            "parameters": [],
+            "metaSortKey": 15
+        },
+        {
+            "_id": "req_16",
+            "_type": "request",
+            "parentId": "fld_admin",
+            "name": "Create Airport",
+            "method": "POST",
+            "url": "{{ _.base_url }}/airports",
+            "headers": [
+                {
+                    "name": "Accept",
+                    "value": "application/json"
+                },
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "authentication": {
+                "type": "bearer",
+                "token": "{{ _.token }}",
+                "prefix": ""
+            },
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n    \"iata_code\": \"SFO\",\n    \"name\": \"San Francisco Intl\",\n    \"city\": \"San Francisco\",\n    \"country\": \"USA\"\n}"
+            },
+            "parameters": [],
+            "metaSortKey": 16
+        },
+        {
+            "_id": "req_17",
+            "_type": "request",
+            "parentId": "fld_admin",
+            "name": "Create Route",
+            "method": "POST",
+            "url": "{{ _.base_url }}/routes",
+            "headers": [
+                {
+                    "name": "Accept",
+                    "value": "application/json"
+                },
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "authentication": {
+                "type": "bearer",
+                "token": "{{ _.token }}",
+                "prefix": ""
+            },
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n    \"origin_airport_id\": 1,\n    \"destination_airport_id\": 2,\n    \"distance_km\": 3983,\n    \"estimated_duration\": 360\n}"
+            },
+            "parameters": [],
+            "metaSortKey": 17
+        },
+        {
+            "_id": "req_18",
+            "_type": "request",
+            "parentId": "fld_admin",
+            "name": "Create Aircraft",
+            "method": "POST",
+            "url": "{{ _.base_url }}/aircraft",
+            "headers": [
+                {
+                    "name": "Accept",
+                    "value": "application/json"
+                },
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "authentication": {
+                "type": "bearer",
+                "token": "{{ _.token }}",
+                "prefix": ""
+            },
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n    \"registration_number\": \"N99999\",\n    \"model\": \"B737\",\n    \"capacity\": 180,\n    \"manufacturer\": \"Boeing\"\n}"
+            },
+            "parameters": [],
+            "metaSortKey": 18
+        },
+        {
+            "_id": "req_19",
+            "_type": "request",
+            "parentId": "fld_admin",
+            "name": "Add Aircraft Seats",
+            "method": "POST",
+            "url": "{{ _.base_url }}/aircraft/1/seats",
+            "headers": [
+                {
+                    "name": "Accept",
+                    "value": "application/json"
+                },
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "authentication": {
+                "type": "bearer",
+                "token": "{{ _.token }}",
+                "prefix": ""
+            },
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n    \"seats\": [\n        {\n            \"seat_number\": \"2A\",\n            \"seat_class\": \"business\",\n            \"is_window\": true\n        }\n    ]\n}"
+            },
+            "parameters": [],
+            "metaSortKey": 19
+        },
+        {
+            "_id": "req_20",
+            "_type": "request",
+            "parentId": "fld_admin",
+            "name": "Create Gate",
+            "method": "POST",
+            "url": "{{ _.base_url }}/gates",
+            "headers": [
+                {
+                    "name": "Accept",
+                    "value": "application/json"
+                },
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "authentication": {
+                "type": "bearer",
+                "token": "{{ _.token }}",
+                "prefix": ""
+            },
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n    \"airport_id\": 1,\n    \"gate_code\": \"C7\"\n}"
+            },
+            "parameters": [],
+            "metaSortKey": 20
+        },
+        {
+            "_id": "req_21",
+            "_type": "request",
+            "parentId": "fld_admin",
+            "name": "Create Flight",
+            "method": "POST",
+            "url": "{{ _.base_url }}/flights",
+            "headers": [
+                {
+                    "name": "Accept",
+                    "value": "application/json"
+                },
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "authentication": {
+                "type": "bearer",
+                "token": "{{ _.token }}",
+                "prefix": ""
+            },
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n    \"flight_number\": \"AB200\",\n    \"route_id\": 1,\n    \"aircraft_id\": 1,\n    \"departure_time\": \"2026-08-01 09:00:00\",\n    \"arrival_time\": \"2026-08-01 12:00:00\",\n    \"base_price\": 199,\n    \"class_prices\": [\n        {\n            \"seat_class\": \"economy\",\n            \"price\": 199\n        },\n        {\n            \"seat_class\": \"business\",\n            \"price\": 549\n        }\n    ]\n}"
+            },
+            "parameters": [],
+            "metaSortKey": 21
+        },
+        {
+            "_id": "req_22",
+            "_type": "request",
+            "parentId": "fld_admin",
+            "name": "Update Flight Status",
+            "method": "PATCH",
+            "url": "{{ _.base_url }}/flights/1/status",
+            "headers": [
+                {
+                    "name": "Accept",
+                    "value": "application/json"
+                },
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "authentication": {
+                "type": "bearer",
+                "token": "{{ _.token }}",
+                "prefix": ""
+            },
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n    \"status\": \"boarding\",\n    \"reason\": \"On time\"\n}"
+            },
+            "parameters": [],
+            "metaSortKey": 22
+        },
+        {
+            "_id": "req_23",
+            "_type": "request",
+            "parentId": "fld_admin",
+            "name": "Create Staff",
+            "method": "POST",
+            "url": "{{ _.base_url }}/staff",
+            "headers": [
+                {
+                    "name": "Accept",
+                    "value": "application/json"
+                },
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "authentication": {
+                "type": "bearer",
+                "token": "{{ _.token }}",
+                "prefix": ""
+            },
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n    \"internal_user_id\": 1,\n    \"employee_id\": \"EMP-0002\",\n    \"staff_role\": \"cabin_crew\",\n    \"joined_date\": \"2021-03-01\"\n}"
+            },
+            "parameters": [],
+            "metaSortKey": 23
+        },
+        {
+            "_id": "req_24",
+            "_type": "request",
+            "parentId": "fld_admin",
+            "name": "Assign Crew",
+            "method": "POST",
+            "url": "{{ _.base_url }}/crew-assignments",
+            "headers": [
+                {
+                    "name": "Accept",
+                    "value": "application/json"
+                },
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "authentication": {
+                "type": "bearer",
+                "token": "{{ _.token }}",
+                "prefix": ""
+            },
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n    \"flight_id\": 1,\n    \"staff_id\": 1,\n    \"assignment_role\": \"captain\"\n}"
+            },
+            "parameters": [],
+            "metaSortKey": 24
+        },
+        {
+            "_id": "req_25",
+            "_type": "request",
+            "parentId": "fld_admin",
+            "name": "Schedule Maintenance",
+            "method": "POST",
+            "url": "{{ _.base_url }}/maintenance",
+            "headers": [
+                {
+                    "name": "Accept",
+                    "value": "application/json"
+                },
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "authentication": {
+                "type": "bearer",
+                "token": "{{ _.token }}",
+                "prefix": ""
+            },
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n    \"aircraft_id\": 1,\n    \"maintenance_type\": \"routine\",\n    \"scheduled_date\": \"2026-08-10\"\n}"
+            },
+            "parameters": [],
+            "metaSortKey": 25
+        }
+    ]
+}

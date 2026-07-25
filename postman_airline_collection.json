@@ -1,0 +1,417 @@
+{
+  "info": {
+    "_postman_id": "d74f30ca-6ac7-4d9a-9918-airline-api",
+    "name": "Airline API",
+    "description": "Converted from insomnia_airline_collection.json. Run Auth > Login first; its test script automatically saves the returned bearer token.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {"key": "token", "value": "{{token}}", "type": "string"}
+    ]
+  },
+  "variable": [
+    {"key": "base_url", "value": "http://127.0.0.1:8000/api", "type": "string"},
+    {"key": "token", "value": "", "type": "string"},
+    {"key": "flight_id", "value": "1", "type": "string"},
+    {"key": "booking_id", "value": "1", "type": "string"},
+    {"key": "aircraft_id", "value": "1", "type": "string"}
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "POST",
+            "header": [
+              {"key": "Accept", "value": "application/json"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"New Passenger\",\n  \"email\": \"new@example.test\",\n  \"password\": \"password\",\n  \"phone\": \"+1-555-0199\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": "{{base_url}}/auth/register"
+          }
+        },
+        {
+          "name": "Login (passenger or staff)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.token) {",
+                  "  pm.collectionVariables.set('token', body.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "POST",
+            "header": [
+              {"key": "Accept", "value": "application/json"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"jane@example.test\",\n  \"password\": \"password\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": "{{base_url}}/auth/login"
+          }
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": "{{base_url}}/auth/me"
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Accept", "value": "application/json"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current_password\": \"password\",\n  \"new_password\": \"newpass123\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": "{{base_url}}/auth/change-password"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": "{{base_url}}/auth/logout"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Flights (public)",
+      "item": [
+        {
+          "name": "Search Flights",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": {
+              "raw": "{{base_url}}/flights/search?origin=New%20York%20(JFK)&destination=Los%20Angeles%20(LAX)&class=business&date=",
+              "host": ["{{base_url}}"],
+              "path": ["flights", "search"],
+              "query": [
+                {"key": "origin", "value": "New York (JFK)"},
+                {"key": "destination", "value": "Los Angeles (LAX)"},
+                {"key": "class", "value": "business"},
+                {"key": "date", "value": ""}
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Flights",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": "{{base_url}}/flights"
+          }
+        },
+        {
+          "name": "Get Flight",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": "{{base_url}}/flights/{{flight_id}}"
+          }
+        },
+        {
+          "name": "Flight Seats",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": "{{base_url}}/flights/{{flight_id}}/seats"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bookings (passenger)",
+      "item": [
+        {
+          "name": "My Bookings",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": "{{base_url}}/bookings"
+          }
+        },
+        {
+          "name": "Create Booking",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.id) pm.collectionVariables.set('booking_id', body.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Accept", "value": "application/json"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"flight_id\": {{flight_id}},\n  \"passengers\": [\n    {\n      \"passenger_id\": 1,\n      \"seat_class\": \"business\",\n      \"flight_seat_id\": 5\n    }\n  ]\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": "{{base_url}}/bookings"
+          }
+        },
+        {
+          "name": "Get Booking",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": "{{base_url}}/bookings/{{booking_id}}"
+          }
+        },
+        {
+          "name": "Pay Booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Accept", "value": "application/json"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payment_method\": \"credit_card\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": "{{base_url}}/bookings/{{booking_id}}/payment"
+          }
+        },
+        {
+          "name": "Booking Ticket",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": "{{base_url}}/bookings/{{booking_id}}/ticket"
+          }
+        },
+        {
+          "name": "Cancel Booking",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": "{{base_url}}/bookings/{{booking_id}}/cancel"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Staff / Admin (internal)",
+      "item": [
+        {
+          "name": "Create Airport",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Accept", "value": "application/json"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"iata_code\": \"SFO\",\n  \"name\": \"San Francisco Intl\",\n  \"city\": \"San Francisco\",\n  \"country\": \"USA\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": "{{base_url}}/airports"
+          }
+        },
+        {
+          "name": "Create Route",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Accept", "value": "application/json"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"origin_airport_id\": 1,\n  \"destination_airport_id\": 2,\n  \"distance_km\": 3983,\n  \"estimated_duration\": 360\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": "{{base_url}}/routes"
+          }
+        },
+        {
+          "name": "Create Aircraft",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Accept", "value": "application/json"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"registration_number\": \"N99999\",\n  \"model\": \"B737\",\n  \"capacity\": 180,\n  \"manufacturer\": \"Boeing\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": "{{base_url}}/aircraft"
+          }
+        },
+        {
+          "name": "Add Aircraft Seats",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Accept", "value": "application/json"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"seats\": [\n    {\n      \"seat_number\": \"2A\",\n      \"seat_class\": \"business\",\n      \"is_window\": true\n    }\n  ]\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": "{{base_url}}/aircraft/{{aircraft_id}}/seats"
+          }
+        },
+        {
+          "name": "Create Gate",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Accept", "value": "application/json"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"airport_id\": 1,\n  \"gate_code\": \"C7\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": "{{base_url}}/gates"
+          }
+        },
+        {
+          "name": "Create Flight",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.id) pm.collectionVariables.set('flight_id', body.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Accept", "value": "application/json"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"flight_number\": \"AB200\",\n  \"route_id\": 1,\n  \"aircraft_id\": {{aircraft_id}},\n  \"departure_time\": \"2026-08-01 09:00:00\",\n  \"arrival_time\": \"2026-08-01 12:00:00\",\n  \"base_price\": 199,\n  \"class_prices\": [\n    {\"seat_class\": \"economy\", \"price\": 199},\n    {\"seat_class\": \"business\", \"price\": 549}\n  ]\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": "{{base_url}}/flights"
+          }
+        },
+        {
+          "name": "Update Flight Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {"key": "Accept", "value": "application/json"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"boarding\",\n  \"reason\": \"On time\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": "{{base_url}}/flights/{{flight_id}}/status"
+          }
+        },
+        {
+          "name": "Create Staff",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Accept", "value": "application/json"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"internal_user_id\": 1,\n  \"employee_id\": \"EMP-0002\",\n  \"staff_role\": \"cabin_crew\",\n  \"joined_date\": \"2021-03-01\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": "{{base_url}}/staff"
+          }
+        },
+        {
+          "name": "Assign Crew",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Accept", "value": "application/json"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"flight_id\": {{flight_id}},\n  \"staff_id\": 1,\n  \"assignment_role\": \"captain\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": "{{base_url}}/crew-assignments"
+          }
+        },
+        {
+          "name": "Schedule Maintenance",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Accept", "value": "application/json"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"aircraft_id\": {{aircraft_id}},\n  \"maintenance_type\": \"routine\",\n  \"scheduled_date\": \"2026-08-10\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": "{{base_url}}/maintenance"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,392 @@
+openapi: 3.0.3
+info:
+  title: Airline System API
+  version: 1.0.0
+  description: OpenAPI definition for the CS 394 Airline System.
+servers:
+  - url: http://127.0.0.1:8000/api
+security:
+  - bearerAuth: []
+tags:
+  - {name: Authentication}
+  - {name: Airports}
+  - {name: Routes}
+  - {name: Flights}
+  - {name: Aircraft}
+  - {name: Gates}
+  - {name: Bookings}
+  - {name: Payments and Tickets}
+  - {name: Staff and Crew}
+  - {name: Maintenance}
+  - {name: Notifications}
+  - {name: Internal Users}
+paths:
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register a passenger
+      security: []
+      requestBody: {$ref: '#/components/requestBodies/Register'}
+      responses: {'201': {$ref: '#/components/responses/Auth'}, '422': {$ref: '#/components/responses/Validation'}}
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Log in as a passenger or internal user
+      security: []
+      requestBody: {$ref: '#/components/requestBodies/Login'}
+      responses: {'200': {$ref: '#/components/responses/Auth'}, '422': {$ref: '#/components/responses/Validation'}}
+  /auth/staff/login:
+    post:
+      tags: [Authentication]
+      summary: Log in as an internal user
+      security: []
+      requestBody: {$ref: '#/components/requestBodies/Login'}
+      responses: {'200': {$ref: '#/components/responses/Auth'}, '422': {$ref: '#/components/responses/Validation'}}
+  /auth/forgot-password:
+    post:
+      tags: [Authentication]
+      summary: Request a password reset
+      security: []
+      requestBody: {$ref: '#/components/requestBodies/Email'}
+      responses: {'200': {$ref: '#/components/responses/Message'}, '422': {$ref: '#/components/responses/Validation'}}
+  /auth/reset-password:
+    post:
+      tags: [Authentication]
+      summary: Reset a password
+      security: []
+      requestBody: {$ref: '#/components/requestBodies/ResetPassword'}
+      responses: {'200': {$ref: '#/components/responses/Message'}, '422': {$ref: '#/components/responses/Validation'}}
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Revoke the current session
+      responses: {'200': {$ref: '#/components/responses/Message'}}
+  /auth/me:
+    get:
+      tags: [Authentication]
+      summary: Get current profile
+      responses: {'200': {$ref: '#/components/responses/Object'}}
+    put:
+      tags: [Authentication]
+      summary: Update current profile
+      requestBody: {$ref: '#/components/requestBodies/Profile'}
+      responses: {'200': {$ref: '#/components/responses/Object'}, '422': {$ref: '#/components/responses/Validation'}}
+  /auth/change-password:
+    put:
+      tags: [Authentication]
+      summary: Change current password
+      requestBody: {$ref: '#/components/requestBodies/ChangePassword'}
+      responses: {'204': {description: Password changed}, '422': {$ref: '#/components/responses/Validation'}}
+  /auth/sessions:
+    get:
+      tags: [Authentication]
+      summary: List owned sessions
+      responses: {'200': {$ref: '#/components/responses/Array'}}
+  /auth/sessions/{session}:
+    delete:
+      tags: [Authentication]
+      summary: Revoke an owned session
+      parameters: [{$ref: '#/components/parameters/SessionId'}]
+      responses: {'204': {description: Session revoked}, '403': {$ref: '#/components/responses/Error'}}
+  /airports:
+    get:
+      tags: [Airports]
+      summary: List airports
+      security: []
+      parameters: [{$ref: '#/components/parameters/Page'}, {$ref: '#/components/parameters/PerPage'}]
+      responses: {'200': {$ref: '#/components/responses/Page'}}
+    post:
+      tags: [Airports]
+      summary: Create airport (internal)
+      requestBody: {$ref: '#/components/requestBodies/Airport'}
+      responses: {'201': {$ref: '#/components/responses/Object'}, '422': {$ref: '#/components/responses/Validation'}}
+  /airports/{airport}:
+    parameters: [{$ref: '#/components/parameters/AirportId'}]
+    get: {tags: [Airports], summary: Get airport, security: [], responses: {'200': {$ref: '#/components/responses/Object'}}}
+    put: {tags: [Airports], summary: Replace airport (internal), requestBody: {$ref: '#/components/requestBodies/Airport'}, responses: {'200': {$ref: '#/components/responses/Object'}}}
+    patch: {tags: [Airports], summary: Update airport (internal), requestBody: {$ref: '#/components/requestBodies/Airport'}, responses: {'200': {$ref: '#/components/responses/Object'}}}
+    delete: {tags: [Airports], summary: Delete airport (internal), responses: {'204': {description: Deleted}}}
+  /routes:
+    get:
+      tags: [Routes]
+      summary: List routes
+      security: []
+      responses: {'200': {$ref: '#/components/responses/Page'}}
+    post:
+      tags: [Routes]
+      summary: Create route (internal)
+      requestBody: {$ref: '#/components/requestBodies/Route'}
+      responses: {'201': {$ref: '#/components/responses/Object'}}
+  /routes/{route}:
+    parameters: [{$ref: '#/components/parameters/RouteId'}]
+    get: {tags: [Routes], summary: Get route, security: [], responses: {'200': {$ref: '#/components/responses/Object'}}}
+    put: {tags: [Routes], summary: Replace route (internal), requestBody: {$ref: '#/components/requestBodies/Route'}, responses: {'200': {$ref: '#/components/responses/Object'}}}
+    patch: {tags: [Routes], summary: Update route (internal), requestBody: {$ref: '#/components/requestBodies/Route'}, responses: {'200': {$ref: '#/components/responses/Object'}}}
+    delete: {tags: [Routes], summary: Delete route (internal), responses: {'204': {description: Deleted}}}
+  /flights:
+    get:
+      tags: [Flights]
+      summary: List and filter flights
+      security: []
+      parameters:
+        - {name: flight_number, in: query, schema: {type: string}}
+        - {name: status, in: query, schema: {$ref: '#/components/schemas/FlightStatus'}}
+        - {name: origin_airport_id, in: query, schema: {type: integer}}
+        - {name: destination_airport_id, in: query, schema: {type: integer}}
+        - {name: departure_date, in: query, schema: {type: string, format: date}}
+      responses: {'200': {$ref: '#/components/responses/Page'}}
+    post:
+      tags: [Flights]
+      summary: Schedule flight (internal)
+      requestBody: {$ref: '#/components/requestBodies/Flight'}
+      responses: {'201': {$ref: '#/components/responses/Object'}, '422': {$ref: '#/components/responses/Validation'}}
+  /flights/search:
+    get:
+      tags: [Flights]
+      summary: Search flights by IATA/city and date
+      security: []
+      parameters:
+        - {name: origin, in: query, schema: {type: string}, example: PNH}
+        - {name: destination, in: query, schema: {type: string}, example: BKK}
+        - {name: date, in: query, schema: {type: string, format: date}}
+      responses: {'200': {$ref: '#/components/responses/Array'}}
+  /flights/{flight}:
+    parameters: [{$ref: '#/components/parameters/FlightId'}]
+    get: {tags: [Flights], summary: Get flight, security: [], responses: {'200': {$ref: '#/components/responses/Object'}}}
+    put: {tags: [Flights], summary: Update flight (internal), requestBody: {$ref: '#/components/requestBodies/FlightUpdate'}, responses: {'200': {$ref: '#/components/responses/Object'}, '422': {$ref: '#/components/responses/Validation'}}}
+    delete: {tags: [Flights], summary: Delete flight (internal), responses: {'204': {description: Deleted}}}
+  /flights/{flight}/seats:
+    get:
+      tags: [Flights]
+      summary: Get flight seat inventory and prices
+      security: []
+      parameters: [{$ref: '#/components/parameters/FlightId'}]
+      responses: {'200': {$ref: '#/components/responses/Array'}}
+  /flights/{flight}/status:
+    patch:
+      tags: [Flights]
+      summary: Change flight status (internal)
+      parameters: [{$ref: '#/components/parameters/FlightId'}]
+      requestBody: {$ref: '#/components/requestBodies/FlightStatus'}
+      responses: {'200': {$ref: '#/components/responses/Object'}}
+  /aircraft:
+    get: {tags: [Aircraft], summary: List aircraft (internal), responses: {'200': {$ref: '#/components/responses/Page'}}}
+    post: {tags: [Aircraft], summary: Create aircraft (internal), requestBody: {$ref: '#/components/requestBodies/Aircraft'}, responses: {'201': {$ref: '#/components/responses/Object'}}}
+  /aircraft/{aircraft}:
+    parameters: [{$ref: '#/components/parameters/AircraftId'}]
+    get: {tags: [Aircraft], summary: Get aircraft and seats (internal), responses: {'200': {$ref: '#/components/responses/Object'}}}
+    put: {tags: [Aircraft], summary: Replace aircraft (internal), requestBody: {$ref: '#/components/requestBodies/Aircraft'}, responses: {'200': {$ref: '#/components/responses/Object'}}}
+    patch: {tags: [Aircraft], summary: Update aircraft (internal), requestBody: {$ref: '#/components/requestBodies/Aircraft'}, responses: {'200': {$ref: '#/components/responses/Object'}}}
+    delete: {tags: [Aircraft], summary: Delete aircraft (internal), responses: {'204': {description: Deleted}}}
+  /aircraft/{aircraft}/seats:
+    post:
+      tags: [Aircraft]
+      summary: Add aircraft seat map (internal)
+      parameters: [{$ref: '#/components/parameters/AircraftId'}]
+      requestBody: {$ref: '#/components/requestBodies/Seats'}
+      responses: {'201': {$ref: '#/components/responses/Array'}}
+  /gates:
+    get: {tags: [Gates], summary: List gates (internal), responses: {'200': {$ref: '#/components/responses/Page'}}}
+    post: {tags: [Gates], summary: Create gate (internal), requestBody: {$ref: '#/components/requestBodies/Gate'}, responses: {'201': {$ref: '#/components/responses/Object'}}}
+  /gates/{gate}:
+    parameters: [{$ref: '#/components/parameters/GateId'}]
+    get: {tags: [Gates], summary: Get gate (internal), responses: {'200': {$ref: '#/components/responses/Object'}}}
+    put: {tags: [Gates], summary: Replace gate (internal), requestBody: {$ref: '#/components/requestBodies/Gate'}, responses: {'200': {$ref: '#/components/responses/Object'}}}
+    patch: {tags: [Gates], summary: Update gate (internal), requestBody: {$ref: '#/components/requestBodies/Gate'}, responses: {'200': {$ref: '#/components/responses/Object'}}}
+    delete: {tags: [Gates], summary: Delete gate (internal), responses: {'204': {description: Deleted}}}
+  /bookings:
+    get: {tags: [Bookings], summary: List accessible bookings, responses: {'200': {$ref: '#/components/responses/Page'}}}
+    post: {tags: [Bookings], summary: Create booking, requestBody: {$ref: '#/components/requestBodies/Booking'}, responses: {'201': {$ref: '#/components/responses/Object'}, '422': {$ref: '#/components/responses/Validation'}}}
+  /bookings/{booking}:
+    parameters: [{$ref: '#/components/parameters/BookingId'}]
+    get: {tags: [Bookings], summary: Get booking, responses: {'200': {$ref: '#/components/responses/Object'}}}
+    put: {tags: [Bookings], summary: Change booked seat/request, requestBody: {$ref: '#/components/requestBodies/BookingUpdate'}, responses: {'200': {$ref: '#/components/responses/Object'}}}
+  /bookings/{booking}/cancel:
+    post: {tags: [Bookings], summary: Cancel booking and release seats, parameters: [{$ref: '#/components/parameters/BookingId'}], responses: {'200': {$ref: '#/components/responses/Object'}}}
+  /bookings/{booking}/payment:
+    parameters: [{$ref: '#/components/parameters/BookingId'}]
+    get: {tags: [Payments and Tickets], summary: Get payment, responses: {'200': {$ref: '#/components/responses/Object'}}}
+    post: {tags: [Payments and Tickets], summary: Pay and issue ticket, requestBody: {$ref: '#/components/requestBodies/Payment'}, responses: {'201': {$ref: '#/components/responses/Object'}}}
+  /bookings/{booking}/ticket:
+    get: {tags: [Payments and Tickets], summary: Get ticket, parameters: [{$ref: '#/components/parameters/BookingId'}], responses: {'200': {$ref: '#/components/responses/Object'}}}
+  /tickets/lookup:
+    post: {tags: [Payments and Tickets], summary: Look up ticket by code, security: [], requestBody: {$ref: '#/components/requestBodies/TicketLookup'}, responses: {'200': {$ref: '#/components/responses/Object'}}}
+  /staff:
+    get: {tags: [Staff and Crew], summary: List staff (internal), responses: {'200': {$ref: '#/components/responses/Page'}}}
+    post: {tags: [Staff and Crew], summary: Create staff profile (internal), requestBody: {$ref: '#/components/requestBodies/Staff'}, responses: {'201': {$ref: '#/components/responses/Object'}}}
+  /staff/{staff}:
+    parameters: [{$ref: '#/components/parameters/StaffId'}]
+    get: {tags: [Staff and Crew], summary: Get staff (internal), responses: {'200': {$ref: '#/components/responses/Object'}}}
+    put: {tags: [Staff and Crew], summary: Replace staff (internal), requestBody: {$ref: '#/components/requestBodies/Staff'}, responses: {'200': {$ref: '#/components/responses/Object'}}}
+    patch: {tags: [Staff and Crew], summary: Update staff (internal), requestBody: {$ref: '#/components/requestBodies/Staff'}, responses: {'200': {$ref: '#/components/responses/Object'}}}
+    delete: {tags: [Staff and Crew], summary: Delete staff (internal), responses: {'204': {description: Deleted}}}
+  /staff/{staff}/availability:
+    parameters: [{$ref: '#/components/parameters/StaffId'}]
+    get: {tags: [Staff and Crew], summary: List staff availability, responses: {'200': {$ref: '#/components/responses/Array'}}}
+    post: {tags: [Staff and Crew], summary: Set daily availability, requestBody: {$ref: '#/components/requestBodies/Availability'}, responses: {'201': {$ref: '#/components/responses/Object'}}}
+  /crew-assignments:
+    get: {tags: [Staff and Crew], summary: List crew assignments, responses: {'200': {$ref: '#/components/responses/Page'}}}
+    post: {tags: [Staff and Crew], summary: Assign crew to flight, requestBody: {$ref: '#/components/requestBodies/Crew'}, responses: {'201': {$ref: '#/components/responses/Object'}}}
+  /crew-assignments/{crewAssignment}:
+    delete: {tags: [Staff and Crew], summary: Delete crew assignment, parameters: [{$ref: '#/components/parameters/CrewId'}], responses: {'204': {description: Deleted}}}
+  /maintenance:
+    get: {tags: [Maintenance], summary: List maintenance schedules, responses: {'200': {$ref: '#/components/responses/Page'}}}
+    post: {tags: [Maintenance], summary: Schedule maintenance, requestBody: {$ref: '#/components/requestBodies/Maintenance'}, responses: {'201': {$ref: '#/components/responses/Object'}}}
+  /maintenance/{maintenanceSchedule}:
+    parameters: [{$ref: '#/components/parameters/MaintenanceId'}]
+    get: {tags: [Maintenance], summary: Get maintenance and logs, responses: {'200': {$ref: '#/components/responses/Object'}}}
+    put: {tags: [Maintenance], summary: Replace maintenance schedule, requestBody: {$ref: '#/components/requestBodies/Maintenance'}, responses: {'200': {$ref: '#/components/responses/Object'}}}
+    patch: {tags: [Maintenance], summary: Update/complete maintenance, requestBody: {$ref: '#/components/requestBodies/Maintenance'}, responses: {'200': {$ref: '#/components/responses/Object'}}}
+    delete: {tags: [Maintenance], summary: Delete maintenance, responses: {'204': {description: Deleted}}}
+  /maintenance/{maintenanceSchedule}/details:
+    post: {tags: [Maintenance], summary: Add maintenance work log, parameters: [{$ref: '#/components/parameters/MaintenanceId'}], requestBody: {$ref: '#/components/requestBodies/MaintenanceDetail'}, responses: {'201': {$ref: '#/components/responses/Object'}}}
+  /notifications:
+    get: {tags: [Notifications], summary: List passenger notifications, responses: {'200': {$ref: '#/components/responses/Page'}}}
+  /notifications/{notification}/read:
+    patch: {tags: [Notifications], summary: Mark owned notification read, parameters: [{$ref: '#/components/parameters/NotificationId'}], responses: {'200': {$ref: '#/components/responses/Object'}}}
+  /internal-users:
+    get: {tags: [Internal Users], summary: List internal users (admin), responses: {'200': {$ref: '#/components/responses/Page'}}}
+    post: {tags: [Internal Users], summary: Create internal user (admin), requestBody: {$ref: '#/components/requestBodies/InternalUser'}, responses: {'201': {$ref: '#/components/responses/Object'}}}
+  /internal-users/{internalUser}:
+    patch: {tags: [Internal Users], summary: Update internal role/status (admin), parameters: [{$ref: '#/components/parameters/InternalUserId'}], requestBody: {$ref: '#/components/requestBodies/InternalUserUpdate'}, responses: {'200': {$ref: '#/components/responses/Object'}}}
+components:
+  securitySchemes:
+    bearerAuth: {type: http, scheme: bearer, bearerFormat: opaque session token}
+  parameters:
+    Page: {name: page, in: query, schema: {type: integer, default: 1}}
+    PerPage: {name: per_page, in: query, schema: {type: integer, default: 25}}
+    SessionId: {name: session, in: path, required: true, schema: {type: integer}}
+    AirportId: {name: airport, in: path, required: true, schema: {type: integer}}
+    RouteId: {name: route, in: path, required: true, schema: {type: integer}}
+    FlightId: {name: flight, in: path, required: true, schema: {type: integer}}
+    AircraftId: {name: aircraft, in: path, required: true, schema: {type: integer}}
+    GateId: {name: gate, in: path, required: true, schema: {type: integer}}
+    BookingId: {name: booking, in: path, required: true, schema: {type: integer}}
+    StaffId: {name: staff, in: path, required: true, schema: {type: integer}}
+    CrewId: {name: crewAssignment, in: path, required: true, schema: {type: integer}}
+    MaintenanceId: {name: maintenanceSchedule, in: path, required: true, schema: {type: integer}}
+    NotificationId: {name: notification, in: path, required: true, schema: {type: integer}}
+    InternalUserId: {name: internalUser, in: path, required: true, schema: {type: integer}}
+  responses:
+    Object: {description: Resource, content: {application/json: {schema: {type: object, additionalProperties: true}}}}
+    Array: {description: Resource array, content: {application/json: {schema: {type: array, items: {type: object, additionalProperties: true}}}}}
+    Page: {description: Paginated resources, content: {application/json: {schema: {$ref: '#/components/schemas/Page'}}}}
+    Message: {description: Message, content: {application/json: {schema: {$ref: '#/components/schemas/Message'}}}}
+    Auth: {description: Authenticated, content: {application/json: {schema: {$ref: '#/components/schemas/AuthResponse'}}}}
+    Error: {description: Error, content: {application/json: {schema: {$ref: '#/components/schemas/Message'}}}}
+    Validation: {description: Validation or business-rule error, content: {application/json: {schema: {$ref: '#/components/schemas/ValidationError'}}}}
+  requestBodies:
+    Login: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/Login'}}}}
+    Register: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/Register'}}}}
+    Email: {required: true, content: {application/json: {schema: {type: object, required: [email], properties: {email: {type: string, format: email}}}}}}
+    ResetPassword: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ResetPassword'}}}}
+    Profile: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/Profile'}}}}
+    ChangePassword: {required: true, content: {application/json: {schema: {type: object, required: [current_password, new_password], properties: {current_password: {type: string}, new_password: {type: string}}}}}}
+    Airport: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/Airport'}}}}
+    Route: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/Route'}}}}
+    Flight: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/Flight'}}}}
+    FlightUpdate: {required: true, content: {application/json: {schema: {type: object, properties: {gate_id: {type: integer, nullable: true}, departure_time: {type: string, format: date-time}, arrival_time: {type: string, format: date-time}, base_price: {type: number}}}}}}
+    FlightStatus: {required: true, content: {application/json: {schema: {type: object, required: [status], properties: {status: {$ref: '#/components/schemas/FlightStatus'}, reason: {type: string, nullable: true}}}}}}
+    Aircraft: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/Aircraft'}}}}
+    Seats: {required: true, content: {application/json: {schema: {type: object, required: [seats], properties: {seats: {type: array, items: {$ref: '#/components/schemas/Seat'}}}}}}}
+    Gate: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/Gate'}}}}
+    Booking: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/Booking'}}}}
+    BookingUpdate: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/BookingUpdate'}}}}
+    Payment: {required: true, content: {application/json: {schema: {type: object, required: [payment_method], properties: {payment_method: {$ref: '#/components/schemas/PaymentMethod'}}}}}}
+    TicketLookup: {required: true, content: {application/json: {schema: {type: object, required: [ticket_code], properties: {ticket_code: {type: string}}}}}}
+    Staff: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/Staff'}}}}
+    Availability: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/Availability'}}}}
+    Crew: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/Crew'}}}}
+    Maintenance: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/Maintenance'}}}}
+    MaintenanceDetail: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/MaintenanceDetail'}}}}
+    InternalUser: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/InternalUser'}}}}
+    InternalUserUpdate: {required: true, content: {application/json: {schema: {type: object, properties: {role: {$ref: '#/components/schemas/InternalRole'}, is_active: {type: boolean}}}}}}
+  schemas:
+    FlightStatus: {type: string, enum: [scheduled, boarding, departed, in_air, landed, arrived, delayed, cancelled]}
+    SeatClass: {type: string, enum: [economy, business, first_class]}
+    AircraftStatus: {type: string, enum: [available, assigned, maintenance, retired]}
+    PaymentMethod: {type: string, enum: [credit_card, debit_card, paypal, bank_transfer, cash]}
+    InternalRole: {type: string, enum: [admin, manager, agent]}
+    StaffRole: {type: string, enum: [pilot, cabin_crew, ground_staff, engineer]}
+    Login:
+      type: object
+      required: [email, password]
+      properties: {email: {type: string, format: email}, password: {type: string}}
+    Register:
+      type: object
+      required: [name, email, password]
+      properties: {name: {type: string}, email: {type: string, format: email}, password: {type: string, minLength: 8}, phone: {type: string, nullable: true}, passport_number: {type: string, nullable: true}, nationality: {type: string, nullable: true}, date_of_birth: {type: string, format: date, nullable: true}, special_needs: {type: string, nullable: true}}
+    ResetPassword:
+      type: object
+      required: [email, token, password, password_confirmation]
+      properties: {email: {type: string, format: email}, token: {type: string}, password: {type: string, minLength: 8}, password_confirmation: {type: string}}
+    Profile:
+      type: object
+      properties: {name: {type: string}, email: {type: string, format: email}, phone: {type: string, nullable: true}, passport_number: {type: string, nullable: true}, nationality: {type: string, nullable: true}, date_of_birth: {type: string, format: date, nullable: true}, special_needs: {type: string, nullable: true}}
+    Airport:
+      type: object
+      required: [iata_code, name, city, country]
+      properties: {iata_code: {type: string, minLength: 3, maxLength: 3}, name: {type: string}, city: {type: string}, country: {type: string}}
+    Route:
+      type: object
+      required: [origin_airport_id, destination_airport_id]
+      properties: {origin_airport_id: {type: integer}, destination_airport_id: {type: integer}, distance_km: {type: integer, nullable: true}, estimated_duration: {type: integer, nullable: true}, is_active: {type: boolean}}
+    Flight:
+      type: object
+      required: [flight_number, route_id, aircraft_id, departure_time, arrival_time]
+      properties: {flight_number: {type: string}, route_id: {type: integer}, aircraft_id: {type: integer}, gate_id: {type: integer, nullable: true}, departure_time: {type: string, format: date-time}, arrival_time: {type: string, format: date-time}, base_price: {type: number}, status: {$ref: '#/components/schemas/FlightStatus'}, class_prices: {type: array, items: {type: object, properties: {seat_class: {$ref: '#/components/schemas/SeatClass'}, price: {type: number}}}}}
+    Aircraft:
+      type: object
+      required: [registration_number, model, capacity]
+      properties: {registration_number: {type: string}, model: {type: string}, capacity: {type: integer}, status: {$ref: '#/components/schemas/AircraftStatus'}, manufacturer: {type: string, nullable: true}, flight_hours: {type: integer}}
+    Seat:
+      type: object
+      required: [seat_number, seat_class]
+      properties: {seat_number: {type: string}, seat_class: {$ref: '#/components/schemas/SeatClass'}, is_window: {type: boolean}, is_aisle: {type: boolean}}
+    Gate:
+      type: object
+      required: [airport_id, gate_code]
+      properties: {airport_id: {type: integer}, gate_code: {type: string}, status: {type: string, enum: [available, occupied, closed]}}
+    Booking:
+      type: object
+      required: [flight_id, passengers]
+      properties: {flight_id: {type: integer}, trip_type: {type: string, enum: [one_way, round_trip]}, return_flight_id: {type: integer, nullable: true}, passengers: {type: array, items: {type: object, required: [passenger_id, seat_class], properties: {passenger_id: {type: integer}, seat_class: {$ref: '#/components/schemas/SeatClass'}, flight_seat_id: {type: integer, nullable: true}, special_request: {type: string, nullable: true}}}}}
+    BookingUpdate:
+      type: object
+      required: [passenger_id]
+      properties: {passenger_id: {type: integer, description: Booking passenger row ID}, flight_seat_id: {type: integer, nullable: true}, seat_class: {$ref: '#/components/schemas/SeatClass'}, special_request: {type: string, nullable: true}}
+    Staff:
+      type: object
+      required: [internal_user_id, employee_id, staff_role, joined_date]
+      properties: {internal_user_id: {type: integer}, employee_id: {type: string}, license_number: {type: string, nullable: true}, license_expiry: {type: string, format: date, nullable: true}, staff_role: {$ref: '#/components/schemas/StaffRole'}, joined_date: {type: string, format: date}}
+    Availability:
+      type: object
+      required: [available_date, status]
+      properties: {available_date: {type: string, format: date}, status: {type: string, enum: [available, unavailable, on_leave, assigned]}, reason: {type: string, nullable: true}}
+    Crew:
+      type: object
+      required: [flight_id, staff_id, assignment_role]
+      properties: {flight_id: {type: integer}, staff_id: {type: integer}, assignment_role: {type: string, enum: [captain, first_officer, purser, flight_attendant, ground_crew]}}
+    Maintenance:
+      type: object
+      properties: {aircraft_id: {type: integer}, maintenance_type: {type: string, enum: [routine, repair, inspection, overhaul]}, scheduled_date: {type: string, format: date}, end_date: {type: string, format: date, nullable: true}, technician_id: {type: integer, nullable: true}, is_completed: {type: boolean}}
+    MaintenanceDetail:
+      type: object
+      required: [work_done]
+      properties: {work_done: {type: string}, parts_used: {type: string, nullable: true}, technician_id: {type: integer, nullable: true}, technician_notes: {type: string, nullable: true}}
+    InternalUser:
+      type: object
+      required: [name, email, password, role]
+      properties: {name: {type: string}, email: {type: string, format: email}, password: {type: string, minLength: 8}, phone: {type: string, nullable: true}, role: {$ref: '#/components/schemas/InternalRole'}, employee_id: {type: string, nullable: true}, staff_role: {$ref: '#/components/schemas/StaffRole'}, joined_date: {type: string, format: date, nullable: true}}
+    AuthResponse:
+      type: object
+      properties: {token: {type: string}, token_type: {type: string, example: Bearer}, expires_at: {type: string, format: date-time}, user: {type: object, additionalProperties: true}}
+    Page:
+      type: object
+      properties: {current_page: {type: integer}, data: {type: array, items: {type: object, additionalProperties: true}}, per_page: {type: integer}, total: {type: integer}, last_page: {type: integer}}
+    Message:
+      type: object
+      properties: {message: {type: string}}
+    ValidationError:
+      type: object
+      properties: {message: {type: string}, errors: {type: object, additionalProperties: {type: array, items: {type: string}}}}
