@@ -15,18 +15,19 @@ use App\Models\Gate;
 use App\Models\MaintenanceSchedule;
 use App\Models\Route;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class FlightController extends Controller
 {
-    /** How long flight-search results are cached in Redis. */
+    /** How long flight-search results are cached (seconds). */
     private const SEARCH_CACHE_TTL = 60;
 
     /**
-     * Public flight search / listing. Results are cached in Redis (tagged
-     * 'flights') keyed by the query params, and invalidated on any flight write.
+     * Public flight search / listing. Results are cached in the configured cache
+     * store keyed by the query params, and invalidated on any flight write.
      */
     public function index(Request $request)
     {
@@ -60,7 +61,11 @@ class FlightController extends Controller
                 $query->whereDate('departure_time', $date);
             }
 
-            return $query->orderBy('departure_time')->paginate($request->integer('per_page', 25));
+            // Return the array payload, not the paginator object: the Redis cache
+            // store serialize()s the cached value, and a LengthAwarePaginator does
+            // not survive that round-trip (it comes back as __PHP_Incomplete_Class
+            // and breaks the response). The array yields the same JSON shape.
+            return $query->orderBy('departure_time')->paginate($request->integer('per_page', 25))->toArray();
         });
     }
 
@@ -72,7 +77,7 @@ class FlightController extends Controller
 
     /**
      * Contract search: GET /flights/search — returns a flat Flight[] matching
-     * docs/api-contract.md. origin/destination arrive as "City (IATA)" labels.
+     * docs/API_REFERENCE.md. origin/destination arrive as "City (IATA)" labels.
      */
     public function search(Request $request)
     {
@@ -88,11 +93,27 @@ class FlightController extends Controller
         if ($destCode) {
             $query->whereHas('route.destination', fn ($q) => $q->where('iata_code', $destCode));
         }
-        if ($date = $request->query('date')) {
-            $query->whereDate('departure_time', $date);
+        // Browsing without an origin/destination could return the whole schedule;
+        // cap it so the results page stays fast. A real route search is unlimited.
+        if (! $originCode && ! $destCode) {
+            $query->limit(60);
         }
 
-        $flights = $query->orderBy('departure_time')->get();
+        $query->orderBy('departure_time');
+
+        if ($date = $request->query('date')) {
+            // Prefer flights ON the picked date. If there are none (routes only
+            // have a few flights spread across the schedule), fall back to the
+            // nearest upcoming departures on/after it so the list is never empty.
+            // The frontend compares each flight's date to the searched one to
+            // label this fallback.
+            $exact = (clone $query)->whereDate('departure_time', '=', $date)->get();
+            $flights = $exact->isNotEmpty()
+                ? $exact
+                : $query->whereDate('departure_time', '>=', $date)->get();
+        } else {
+            $flights = $query->get();
+        }
 
         return FlightResource::collection($flights);
     }
@@ -273,6 +294,13 @@ class FlightController extends Controller
 
     private function validateResources(int $aircraftId, ?int $gateId, int $routeId, $departure, $arrival, ?int $ignoreFlightId = null): void
     {
+        // Bind datetimes as Carbon so the query grammar formats them to the
+        // connection's datetime format ('Y-m-d H:i:s'). Passing the raw ISO-8601
+        // request string would break the overlap range comparisons on drivers
+        // that compare stored datetimes as text (e.g. SQLite).
+        $departure = Carbon::parse($departure);
+        $arrival = Carbon::parse($arrival);
+
         $aircraft = Aircraft::findOrFail($aircraftId);
         abort_if(in_array($aircraft->status->value, ['maintenance', 'retired'], true), 422, 'Aircraft is not operational.');
         abort_if($aircraft->seats()->count() === 0, 422, 'Aircraft must have a seat map before scheduling.');

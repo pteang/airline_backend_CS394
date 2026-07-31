@@ -21,11 +21,14 @@ use Illuminate\Support\Facades\Route;
 | Public / auth
 |--------------------------------------------------------------------------
 */
-Route::post('auth/register', [AuthController::class, 'register']);
-Route::post('auth/login', [AuthController::class, 'login']);
-Route::post('auth/staff/login', [AuthController::class, 'staffLogin']);
-Route::post('auth/forgot-password', [AuthController::class, 'forgotPassword']);
-Route::post('auth/reset-password', [AuthController::class, 'resetPassword']);
+// Rate-limited so credential endpoints resist brute-force / abuse (per IP).
+Route::middleware('throttle:10,1')->group(function () {
+    Route::post('auth/register', [AuthController::class, 'register']);
+    Route::post('auth/login', [AuthController::class, 'login']);
+    Route::post('auth/staff/login', [AuthController::class, 'staffLogin']);
+    Route::post('auth/forgot-password', [AuthController::class, 'forgotPassword']);
+    Route::post('auth/reset-password', [AuthController::class, 'resetPassword']);
+});
 
 // Public read-only reference & flight search.
 Route::get('airports', [AirportController::class, 'index']);

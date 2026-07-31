@@ -12,8 +12,8 @@ use Throwable;
 
 /**
  * Persists a domain event to the MongoDB activity log off the request path,
- * via the Redis queue. Logging must never break the request, so failures are
- * swallowed after retries.
+ * via the configured queue. Logging must never break the request, so failures
+ * are swallowed after retries.
  */
 class LogActivity implements ShouldQueue
 {

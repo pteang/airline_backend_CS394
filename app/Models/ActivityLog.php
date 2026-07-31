@@ -6,7 +6,7 @@ use MongoDB\Laravel\Eloquent\Model;
 
 /**
  * Append-only activity / audit log stored in MongoDB (the "logs & documents"
- * store). Written asynchronously via the Redis queue — see App\Jobs\LogActivity.
+ * store). Written asynchronously via the configured queue — see App\Jobs\LogActivity.
  */
 class ActivityLog extends Model
 {

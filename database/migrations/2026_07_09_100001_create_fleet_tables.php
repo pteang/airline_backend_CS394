@@ -49,7 +49,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('airport_id')->constrained('airports');
             $table->string('gate_code');
-            $table->enum('status', ['available', 'occupied', 'closed'])->default('available');
+            $table->enum('status', ['available', 'occupied', 'maintenance', 'closed'])->default('available');
         });
     }
 

@@ -1,0 +1,15 @@
+# IP-only reverse proxy (plain HTTP on :80).
+# Same-origin routing: /api/* → Laravel backend, everything else → the React SPA.
+:80 {
+	encode gzip zstd
+
+	# API requests go to the Laravel backend (nginx + php-fpm).
+	handle /api/* {
+		reverse_proxy backend:80
+	}
+
+	# Everything else is the single-page app served by the frontend's nginx.
+	handle {
+		reverse_proxy frontend:80
+	}
+}

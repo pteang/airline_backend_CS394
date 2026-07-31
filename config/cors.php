@@ -19,12 +19,21 @@ return [
 
     'allowed_methods' => ['*'],
 
-    // Frontend origins. Add your production domain(s) here when you deploy.
-    'allowed_origins' => [
-        'http://localhost:5173', // Vite dev server (npm run dev)
-        'http://localhost:3000', // CRA / Next.js
-        'http://localhost:8080', // Dockerized frontend (nginx, docker-compose)
-    ],
+    /*
+     * Frontend origins allowed to call the API. Set CORS_ALLOWED_ORIGINS in the
+     * environment to a comma-separated list of your deployed frontend URLs
+     * (e.g. "https://app.example.com,https://admin.example.com"). When unset,
+     * the common local dev-server ports are allowed so the frontend works out
+     * of the box.
+     */
+    'allowed_origins' => array_filter(array_map(
+        'trim',
+        explode(',', (string) env('CORS_ALLOWED_ORIGINS', implode(',', [
+            'http://localhost:5173', // Vite dev server (npm run dev)
+            'http://localhost:3000', // CRA / Next.js
+            'http://localhost:8080', // Dockerized frontend (nginx, docker-compose)
+        ])))
+    )),
 
     'allowed_origins_patterns' => [],
 

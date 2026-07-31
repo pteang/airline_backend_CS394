@@ -17,7 +17,11 @@ export function AuthProvider({ children }) {
     }
     api
       .me()
-      .then((res) => setUser({ ...res.user, _type: res.type }))
+      // /auth/me returns the bare user object ({ id, name, email, role, ... }).
+      // Recover the account type from its role (passenger vs staff/admin).
+      .then((user) =>
+        setUser({ ...user, _type: user.role === 'passenger' ? 'passenger' : 'internal' })
+      )
       .catch(() => auth.clear())
       .finally(() => setLoading(false));
   }, []);

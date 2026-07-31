@@ -9,7 +9,7 @@ use Illuminate\Support\Str;
 
 /**
  * Maps a passenger (User) or internal (InternalUser) record to the frontend's
- * flat `User` shape from docs/api-contract.md:
+ * flat `User` shape from docs/API_REFERENCE.md:
  *   { id, name, email, phone?, role, initials }
  *
  * Frontend roles are guest | passenger | staff | admin. Internal `admin` maps to
@@ -34,6 +34,12 @@ class UserResource extends JsonResource
             'phone' => $this->phone,
             'role' => $role,
             'initials' => $this->initials($this->full_name),
+            // Present only where the passenger profile is loaded (GET/PUT
+            // /auth/me); the booking flow uses it as the traveller id.
+            'profileId' => $this->when(
+                ! $isInternal && $this->relationLoaded('profile'),
+                fn () => optional($this->profile)->id ? (string) $this->profile->id : null,
+            ),
         ];
     }
 

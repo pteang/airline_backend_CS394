@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\StaffRole;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\InternalUser;
@@ -27,7 +28,7 @@ class UserManagementController extends Controller
             'phone' => ['nullable', 'string'],
             'role' => ['required', Rule::enum(UserRole::class)],
             'employee_id' => ['nullable', 'required_unless:role,admin', 'unique:staff,employee_id'],
-            'staff_role' => ['nullable', Rule::in(['pilot', 'cabin_crew', 'ground_staff', 'engineer'])],
+            'staff_role' => ['nullable', Rule::enum(StaffRole::class)],
             'joined_date' => ['nullable', 'date'],
         ]);
 

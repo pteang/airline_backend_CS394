@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -24,7 +25,7 @@ class AuthController extends Controller
 
     /**
      * Register a passenger account. Contract body: { name, email, password, phone? }.
-     * Returns { token, user } per docs/api-contract.md.
+     * Returns { token, user } per docs/API_REFERENCE.md.
      */
     public function register(Request $request)
     {
@@ -49,15 +50,16 @@ class AuthController extends Controller
                 'is_active' => true,
             ]);
 
-            if (! empty($data['passport_number'])) {
-                PassengerProfile::create([
-                    'user_id' => $user->id,
-                    'passport_number' => $data['passport_number'],
-                    'nationality' => $data['nationality'],
-                    'date_of_birth' => $data['date_of_birth'],
-                    'special_needs' => $data['special_needs'] ?? null,
-                ]);
-            }
+            // Every passenger gets a profile so they can book straight away; the
+            // frontend surfaces `profileId` as the traveller id. Passport and
+            // other details are optional and may be filled in later.
+            PassengerProfile::create([
+                'user_id' => $user->id,
+                'passport_number' => $data['passport_number'] ?? null,
+                'nationality' => $data['nationality'] ?? null,
+                'date_of_birth' => $data['date_of_birth'] ?? null,
+                'special_needs' => $data['special_needs'] ?? null,
+            ]);
 
             return $user;
         });
@@ -66,7 +68,7 @@ class AuthController extends Controller
 
         return response()->json([
             ...$this->issueToken(userId: $user->id),
-            'user' => new UserResource($user),
+            'user' => new UserResource($user->load('profile')),
         ], 201);
     }
 
@@ -90,7 +92,7 @@ class AuthController extends Controller
 
             return response()->json([
                 ...$this->issueToken(userId: $passenger->id),
-                'user' => new UserResource($passenger),
+                'user' => new UserResource($passenger->load('profile')),
             ]);
         }
 
@@ -135,7 +137,7 @@ class AuthController extends Controller
         ]);
     }
 
-    /** Revoke the current session and evict it from the Redis session cache. */
+    /** Revoke the current session and evict it from the session cache. */
     public function logout(Request $request)
     {
         $sessionId = $request->attributes->get('auth_session_id');
@@ -244,9 +246,34 @@ class AuthController extends Controller
                 'expires_at' => now()->addHour(),
                 'created_at' => now(),
             ]);
+
+            // Email the reset link (points at the frontend reset page).
+            $resetUrl = rtrim(config('app.url'), '/')
+                .'/reset-password?email='.urlencode($data['email'])
+                .'&token='.$plainToken;
+
+            try {
+                Mail::html(
+                    '<div style="font-family:Arial,sans-serif;max-width:480px;margin:auto">'
+                    .'<h2 style="color:#0A1F44">Reset your Avion password</h2>'
+                    .'<p>We received a request to reset your password. Click the button below to choose a new one:</p>'
+                    .'<p style="margin:24px 0"><a href="'.$resetUrl.'" '
+                    .'style="background:#0A1F44;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none">Reset password</a></p>'
+                    .'<p style="color:#666;font-size:13px">Or paste this link into your browser:<br>'.$resetUrl.'</p>'
+                    .'<p style="color:#999;font-size:12px">This link expires in 1 hour. If you didn\'t request this, you can ignore this email.</p>'
+                    .'</div>',
+                    function ($message) use ($data) {
+                        $message->to($data['email'])->subject('Reset your Avion password');
+                    }
+                );
+            } catch (\Throwable $e) {
+                // Never leak whether the account exists or that mail failed.
+                report($e);
+            }
         }
 
-        $payload = ['message' => 'If the account exists, a reset token has been created.'];
+        $payload = ['message' => 'If the account exists, a password reset link has been emailed.'];
+        // In local/testing, also hand the token back so the flow can be tested without an inbox.
         if ($exists && app()->environment(['local', 'testing'])) {
             $payload['reset_token'] = $plainToken;
         }

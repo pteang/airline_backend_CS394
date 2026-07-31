@@ -60,7 +60,7 @@ class CrewAssignmentController extends Controller
                 ...$data, 'assigned_by' => $internalUser->id, 'assigned_at' => now(),
             ]);
             $staff->availability()->whereDate('available_date', $flight->departure_time)
-                ->update(['status' => 'assigned']);
+                ->update(['status' => 'flight']);
 
             return $assignment;
         });

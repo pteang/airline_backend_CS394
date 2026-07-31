@@ -8,4 +8,5 @@ enum MaintenanceType: string
     case Repair = 'repair';
     case Inspection = 'inspection';
     case Overhaul = 'overhaul';
+    case Emergency = 'emergency';
 }

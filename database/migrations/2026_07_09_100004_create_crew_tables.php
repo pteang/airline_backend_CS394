@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('staff_id')->constrained('staff');
             $table->date('available_date');
-            $table->enum('status', ['available', 'unavailable', 'on_leave', 'assigned']);
+            $table->enum('status', ['available', 'unavailable', 'on-leave', 'training', 'flight']);
             $table->string('reason')->nullable();
             $table->unique(['staff_id', 'available_date']);
         });

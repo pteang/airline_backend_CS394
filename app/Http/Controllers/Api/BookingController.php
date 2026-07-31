@@ -7,6 +7,7 @@ use App\Enums\PaymentStatus;
 use App\Enums\SeatClass;
 use App\Enums\TripType;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\BookingResource;
 use App\Jobs\LogActivity;
 use App\Models\Booking;
 use App\Models\Flight;
@@ -20,26 +21,33 @@ use Illuminate\Validation\ValidationException;
 
 class BookingController extends Controller
 {
+    /** Relations BookingResource needs to render the flat frontend shape. */
+    public const RELATIONS = [
+        'passenger', 'flight.route.origin', 'flight.route.destination',
+        'flight.aircraft', 'flight.gate', 'flight.classPrices',
+        'passengers.flightSeat.aircraftSeat', 'passengers.passenger',
+        'payment', 'ticket',
+    ];
+
     /** List the authenticated passenger's bookings. */
     public function index(Request $request)
     {
         $user = $request->attributes->get('auth_user');
 
-        return Booking::query()
+        $bookings = Booking::query()
             ->when($request->attributes->get('auth_type') === 'passenger', fn ($q) => $q->where('passenger_id', $user->id))
-            ->with(['flight.route.origin', 'flight.route.destination', 'passengers', 'payment', 'ticket'])
+            ->with(self::RELATIONS)
             ->orderByDesc('booked_at')
             ->paginate($request->integer('per_page', 25));
+
+        return BookingResource::collection($bookings);
     }
 
     public function show(Request $request, Booking $booking)
     {
         $this->authorizeOwner($request, $booking);
 
-        return $booking->load([
-            'flight.route.origin', 'flight.route.destination',
-            'returnFlight', 'passengers.flightSeat.aircraftSeat', 'payment', 'ticket',
-        ]);
+        return new BookingResource($booking->load([...self::RELATIONS, 'returnFlight']));
     }
 
     public function update(Request $request, Booking $booking)
@@ -75,7 +83,7 @@ class BookingController extends Controller
             ]);
         });
 
-        return $booking->fresh(['passengers.flightSeat.aircraftSeat']);
+        return new BookingResource($booking->fresh(self::RELATIONS));
     }
 
     /**
@@ -159,10 +167,9 @@ class BookingController extends Controller
             'travellers' => $booking->passengers()->count(),
         ], 'passenger', $user->id);
 
-        return response()->json(
-            $booking->load(['passengers.flightSeat.aircraftSeat', 'flight']),
-            201,
-        );
+        return (new BookingResource($booking->load(self::RELATIONS)))
+            ->response()
+            ->setStatusCode(201);
     }
 
     /** Cancel a booking, release its seats, and flag any payment for refund. */
@@ -195,7 +202,7 @@ class BookingController extends Controller
             }
         });
 
-        return $booking->fresh(['payment']);
+        return new BookingResource($booking->fresh(self::RELATIONS));
     }
 
     /** The total fare for a booking, from class prices with base_price fallback. */

@@ -9,4 +9,8 @@ enum PaymentMethod: string
     case Paypal = 'paypal';
     case BankTransfer = 'bank_transfer';
     case Cash = 'cash';
+    // Cambodian payment rails used by the frontend.
+    case AbaPay = 'aba_pay';
+    case Acleda = 'acleda';
+    case Wing = 'wing';
 }

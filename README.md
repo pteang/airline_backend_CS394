@@ -7,9 +7,16 @@ aircraft maintenance, notifications, and audit/history records.
 
 ## Quick start
 
-Requirements: PHP 8.3+, Composer, and a relational database. SQLite works for
-local development. Redis and MongoDB are optional production integrations for
-cache/queue and activity logs.
+Requirements: PHP 8.3+ (with the `mongodb` PHP extension), Composer, and a
+relational database. SQLite works for local development.
+
+> **Note on dependencies.** `mongodb/laravel-mongodb` and `predis/predis` are
+> declared in `composer.json`, so `composer install` needs the `mongodb` PHP
+> extension present. Their *runtime* use is optional, though: with the default
+> `.env` the app runs entirely on SQLite plus the `database` cache/queue —
+> MongoDB (activity logs) and Redis (cache/queue) are only engaged when you
+> point the relevant `.env` drivers at them. See
+> [Optional Redis and MongoDB](#optional-redis-and-mongodb) below.
 
 ```bash
 composer install
@@ -99,8 +106,14 @@ seat → pay → issue ticket → cancel/refund workflow.
 
 ## Optional Redis and MongoDB
 
-For the advanced multi-database deployment, configure Redis as the cache and
-queue store and MongoDB as the activity-log store. Run `php artisan queue:work`
-to process audit events. The core relational API and tests do not require
-those services.
+The `mongodb/laravel-mongodb` and `predis/predis` packages ship as required
+composer dependencies (so the `mongodb` PHP extension must be installed to run
+`composer install`), but you do **not** need running Redis or MongoDB servers
+for the core API or the test suite — those run on SQLite and the `database`
+cache/queue by default.
+
+For the advanced multi-database deployment, point the `.env` drivers at the
+real services: set `CACHE_STORE=redis` and `QUEUE_CONNECTION=redis` (Redis as
+the cache/queue store) and configure the `mongodb` connection as the
+activity-log store. Then run `php artisan queue:work` to process audit events.
 # airline_backend_CS394

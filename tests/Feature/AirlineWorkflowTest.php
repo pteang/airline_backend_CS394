@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Aircraft;
 use App\Models\Airport;
+use App\Models\BookingPassenger;
 use App\Models\Flight;
 use App\Models\InternalUser;
 use App\Models\PassengerProfile;
@@ -66,12 +67,12 @@ class AirlineWorkflowTest extends TestCase
             ]],
         ])->assertCreated()->json('id');
 
-        $travellerId = $this->withToken($token)->getJson("/api/bookings/{$bookingId}")
-            ->assertOk()->json('passengers.0.id');
+        $this->withToken($token)->getJson("/api/bookings/{$bookingId}")->assertOk();
+        $travellerId = BookingPassenger::where('booking_id', $bookingId)->value('id');
         $this->withToken($token)->putJson("/api/bookings/{$bookingId}", [
             'passenger_id' => $travellerId, 'seat_class' => 'economy',
             'flight_seat_id' => $seats[1]->id, 'special_request' => 'Vegetarian meal',
-        ])->assertOk()->assertJsonPath('passengers.0.flight_seat_id', $seats[1]->id);
+        ])->assertOk()->assertJsonPath('seat', $seats[1]->aircraftSeat->seat_number);
 
         $this->withToken($token)->postJson("/api/bookings/{$bookingId}/payment", [
             'payment_method' => 'credit_card',
@@ -79,6 +80,6 @@ class AirlineWorkflowTest extends TestCase
 
         $this->withToken($token)->postJson("/api/bookings/{$bookingId}/cancel")
             ->assertOk()->assertJsonPath('status', 'cancelled')
-            ->assertJsonPath('payment.payment_status', 'refunded');
+            ->assertJsonPath('paymentStatus', 'refunded');
     }
 }

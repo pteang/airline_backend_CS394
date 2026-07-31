@@ -6,6 +6,7 @@ use App\Enums\BookingStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\BookingResource;
 use App\Jobs\LogActivity;
 use App\Models\Booking;
 use Illuminate\Http\Request;
@@ -86,7 +87,7 @@ class PaymentController extends Controller
         return response()->json([
             'payment' => $result['payment'],
             'ticket' => $result['ticket'],
-            'booking' => $booking->fresh(),
+            'booking' => new BookingResource($booking->fresh(BookingController::RELATIONS)),
         ], 201);
     }
 

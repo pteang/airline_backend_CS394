@@ -1,0 +1,136 @@
+name: airline-prod
+
+# Production stack for a single DigitalOcean droplet (HTTP, IP-only).
+# A Caddy reverse proxy on :80 serves the SPA and proxies /api to the backend,
+# so the whole app is same-origin — the frontend image works on ANY IP.
+#
+#   cp .env.prod.example .env   # then fill in APP_KEY, APP_URL, DB_PASSWORD
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Values in ${...} are read from the .env file in this directory.
+
+x-backend-env: &backend-env
+  APP_NAME: Avion
+  APP_ENV: production
+  APP_DEBUG: "false"
+  APP_KEY: ${APP_KEY}
+  APP_URL: ${APP_URL}
+  LOG_CHANNEL: stderr
+  DB_CONNECTION: pgsql
+  DB_HOST: db
+  DB_PORT: "5432"
+  DB_DATABASE: airline
+  DB_USERNAME: airline
+  DB_PASSWORD: ${DB_PASSWORD}
+  CACHE_STORE: redis
+  QUEUE_CONNECTION: redis
+  SESSION_DRIVER: redis
+  REDIS_CLIENT: predis
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+  MONGO_DB_URI: mongodb://mongo:27017
+  MONGO_DB_DATABASE: airline_logs
+  CORS_ALLOWED_ORIGINS: ${APP_URL}
+  # ---- Email (password-reset messages) ----
+  MAIL_MAILER: smtp
+  MAIL_HOST: ${MAIL_HOST}
+  MAIL_PORT: ${MAIL_PORT}
+  MAIL_USERNAME: ${MAIL_USERNAME}
+  MAIL_PASSWORD: ${MAIL_PASSWORD}
+  MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS}
+  MAIL_FROM_NAME: Avion
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: airline
+      POSTGRES_USER: airline
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airline -d airline"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+    # NOTE: no host port published — the database is only reachable inside the
+    # compose network, never from the public internet.
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:7
+    volumes:
+      - mongodata:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ ping: 1 }).ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+    environment:
+      <<: *backend-env
+      RUN_MIGRATIONS: "true"          # applies migrations on boot (idempotent)
+      DB_SEED: "${DB_SEED:-true}"     # first-boot demo data; guarded so restarts don't reseed
+    depends_on:
+      db: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      mongo: { condition: service_healthy }
+    restart: unless-stopped
+
+  queue:
+    build:
+      context: .
+    command: php artisan queue:work --tries=3 --timeout=90 --sleep=3
+    environment:
+      <<: *backend-env
+      RUN_MIGRATIONS: "false"
+      DB_SEED: "false"
+    depends_on:
+      backend: { condition: service_started }
+      db: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      mongo: { condition: service_healthy }
+    restart: unless-stopped
+
+  frontend:
+    build:
+      # On the droplet, clone the frontend repo as a sibling of this one, or set
+      # FRONTEND_CONTEXT in .env to wherever it lives.
+      context: ${FRONTEND_CONTEXT:-../AirlineSystemFront-End}
+      args:
+        VITE_API_URL: /api          # relative → same-origin via the proxy (IP-agnostic)
+        VITE_ENABLE_MOCKS: "false"  # use the real backend, not MSW mocks
+    restart: unless-stopped
+
+  proxy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddydata:/data
+      - caddyconfig:/config
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
+
+volumes:
+  dbdata:
+  mongodata:
+  caddydata:
+  caddyconfig:

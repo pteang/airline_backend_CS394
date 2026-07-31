@@ -5,21 +5,25 @@ namespace App\Http\Controllers\Api;
 use App\Enums\AircraftStatus;
 use App\Enums\SeatClass;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\AircraftResource;
 use App\Models\Aircraft;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class AircraftController extends Controller
 {
+    /** Relations AircraftResource needs to derive maintenance history. */
+    private const RELATIONS = ['maintenanceSchedules.details', 'maintenanceSchedules.technician.internalUser'];
+
     public function index(Request $request)
     {
-        $query = Aircraft::query();
+        $query = Aircraft::with(self::RELATIONS);
 
         if ($status = $request->query('status')) {
             $query->where('status', $status);
         }
 
-        return $query->paginate($request->integer('per_page', 25));
+        return AircraftResource::collection($query->paginate($request->integer('per_page', 25)));
     }
 
     public function store(Request $request)
@@ -38,7 +42,7 @@ class AircraftController extends Controller
 
     public function show(Aircraft $aircraft)
     {
-        return $aircraft->load('seats');
+        return new AircraftResource($aircraft->load(self::RELATIONS));
     }
 
     public function update(Request $request, Aircraft $aircraft)

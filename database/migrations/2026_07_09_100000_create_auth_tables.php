@@ -46,7 +46,7 @@ return new class extends Migration
             $table->string('employee_id')->unique();
             $table->string('license_number')->nullable();
             $table->date('license_expiry')->nullable();
-            $table->enum('staff_role', ['pilot', 'cabin_crew', 'ground_staff', 'engineer']);
+            $table->enum('staff_role', ['pilot', 'copilot', 'cabin_crew', 'manager', 'technician', 'ground_staff', 'engineer']);
             $table->date('joined_date');
         });
 

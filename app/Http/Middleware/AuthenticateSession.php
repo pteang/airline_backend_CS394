@@ -12,13 +12,14 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Resolves the bearer token to a session and attaches the authenticated party
- * to the request. The session lookup is cached in Redis (keyed by token) so
- * authenticated requests avoid a Postgres round-trip on every call; Postgres
- * remains the source of truth and the cache is invalidated on logout.
+ * to the request. The session lookup is cached in the configured cache store
+ * (keyed by token) so authenticated requests avoid a database round-trip on
+ * every call; the database remains the source of truth and the cache is
+ * invalidated on logout.
  */
 class AuthenticateSession
 {
-    /** How long a resolved session stays cached in Redis. */
+    /** How long a resolved session stays cached (seconds). */
     private const CACHE_TTL_SECONDS = 900;
 
     public static function cacheKey(string $token): string
@@ -34,7 +35,7 @@ class AuthenticateSession
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
-        // Redis fast path: {type, id, expires_at} resolved from the session store.
+        // Cache fast path: {type, id, expires_at} resolved from the session store.
         $resolved = Cache::remember(self::cacheKey($token), self::CACHE_TTL_SECONDS, function () use ($token) {
             $session = UserSession::where('session_token', $token)
                 ->where('is_active', true)

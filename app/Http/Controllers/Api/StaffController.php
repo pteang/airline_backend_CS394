@@ -5,21 +5,25 @@ namespace App\Http\Controllers\Api;
 use App\Enums\StaffAvailabilityStatus;
 use App\Enums\StaffRole;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\StaffResource;
 use App\Models\Staff;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class StaffController extends Controller
 {
+    /** Relations StaffResource needs for the flat frontend shape. */
+    private const RELATIONS = ['internalUser', 'availability', 'assignments.flight'];
+
     public function index(Request $request)
     {
-        $query = Staff::with('internalUser');
+        $query = Staff::with(self::RELATIONS);
 
         if ($role = $request->query('staff_role')) {
             $query->where('staff_role', $role);
         }
 
-        return $query->paginate($request->integer('per_page', 25));
+        return StaffResource::collection($query->paginate($request->integer('per_page', 25)));
     }
 
     public function store(Request $request)
@@ -33,12 +37,14 @@ class StaffController extends Controller
             'joined_date' => ['required', 'date'],
         ]);
 
-        return response()->json(Staff::create($data)->load('internalUser'), 201);
+        return (new StaffResource(Staff::create($data)->load(self::RELATIONS)))
+            ->response()
+            ->setStatusCode(201);
     }
 
     public function show(Staff $staff)
     {
-        return $staff->load(['internalUser', 'availability', 'assignments.flight']);
+        return new StaffResource($staff->load(self::RELATIONS));
     }
 
     public function update(Request $request, Staff $staff)
@@ -53,7 +59,7 @@ class StaffController extends Controller
 
         $staff->update($data);
 
-        return $staff->load('internalUser');
+        return new StaffResource($staff->load(self::RELATIONS));
     }
 
     public function destroy(Staff $staff)

@@ -34,7 +34,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('booking_id')->unique()->constrained('bookings');
             $table->decimal('amount', 8, 2);
-            $table->enum('payment_method', ['credit_card', 'debit_card', 'paypal', 'bank_transfer', 'cash']);
+            $table->enum('payment_method', ['credit_card', 'debit_card', 'paypal', 'bank_transfer', 'cash', 'aba_pay', 'acleda', 'wing']);
             $table->enum('payment_status', ['pending', 'paid', 'failed', 'refunded'])->default('pending');
             $table->string('transaction_ref')->unique();
             $table->timestamp('paid_at')->nullable();

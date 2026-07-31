@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('maintenance_schedule', function (Blueprint $table) {
             $table->id();
             $table->foreignId('aircraft_id')->constrained('aircraft');
-            $table->enum('maintenance_type', ['routine', 'repair', 'inspection', 'overhaul']);
+            $table->enum('maintenance_type', ['routine', 'repair', 'inspection', 'overhaul', 'emergency']);
             $table->date('scheduled_date');
             $table->date('end_date')->nullable();
             $table->foreignId('technician_id')->nullable()->constrained('staff');
